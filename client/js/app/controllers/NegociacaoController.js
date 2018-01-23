@@ -1,57 +1,173 @@
-class NegociacaoController{
+'use strict';
 
-    constructor(){
-        let $ = document.querySelector.bind(document);
-        this._inputData = $('#data');
-        this._inputQuantidade = $('#quantidade');
-        this._inputValor = $('#valor');
+System.register(['../models/Negociacao', '../models/ListaNegociacoes', '../models/Mensagem', '../services/NegociacaoService', '../views/NegociacoesView', '../helpers/Bind', '../helpers/DateHelper', '../views/MensagemView'], function (_export, _context) {
+    "use strict";
 
-        this._listaNegociacoes = new Bind(new ListaNegociacoes(),
-                                          new NegociacoesView($('#negociacoesView')),
-                                          "adiciona","esvazia");
+    var Negociacao, ListaNegociacoes, Mensagem, NegociacaoService, NegociacoesView, Bind, DateHelper, MensagemView, _createClass, NegociacaoController, negociacaoController;
 
-        this._mensagem = new Bind(new Mensagem(),
-                                  new MensagemView($('#mensagemView')),
-                                  "texto");                                
-       
+    function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+            throw new TypeError("Cannot call a class as a function");
+        }
     }
 
-    adiciona(event){
-        event.preventDefault();
-        let negociacao = this._criaNegociacao();
-        this._listaNegociacoes.adiciona(negociacao);
-        this._mensagem.texto="Negociação importada com sucesso!!"
-        this._limpaFormulario();
-    }
+    return {
+        setters: [function (_modelsNegociacao) {
+            Negociacao = _modelsNegociacao.Negociacao;
+        }, function (_modelsListaNegociacoes) {
+            ListaNegociacoes = _modelsListaNegociacoes.ListaNegociacoes;
+        }, function (_modelsMensagem) {
+            Mensagem = _modelsMensagem.Mensagem;
+        }, function (_servicesNegociacaoService) {
+            NegociacaoService = _servicesNegociacaoService.NegociacaoService;
+        }, function (_viewsNegociacoesView) {
+            NegociacoesView = _viewsNegociacoesView.NegociacoesView;
+        }, function (_helpersBind) {
+            Bind = _helpersBind.Bind;
+        }, function (_helpersDateHelper) {
+            DateHelper = _helpersDateHelper.DateHelper;
+        }, function (_viewsMensagemView) {
+            MensagemView = _viewsMensagemView.MensagemView;
+        }],
+        execute: function () {
+            _createClass = function () {
+                function defineProperties(target, props) {
+                    for (var i = 0; i < props.length; i++) {
+                        var descriptor = props[i];
+                        descriptor.enumerable = descriptor.enumerable || false;
+                        descriptor.configurable = true;
+                        if ("value" in descriptor) descriptor.writable = true;
+                        Object.defineProperty(target, descriptor.key, descriptor);
+                    }
+                }
 
-    importarNegociacoes(){
-        let service = new NegociacaoService();
-        
-        Promise.all([service.obtemNegociacoesDaSemana(),
-                     service.obtemNegociacoesDaSemanaAnterior(),
-                     service.obtemNegociacoesDaSemanaRetrasada()])
-               .then(arrayPromisses => {
-                     arrayPromisses.reduce((arrayNovo,elemento) => arrayNovo.concat(elemento),[])
-                                   .forEach(negociacao => this._listaNegociacoes.adiciona(negociacao));
-                })
-               .catch( erro => this._mensagem.texto=erro);
-    }
+                return function (Constructor, protoProps, staticProps) {
+                    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+                    if (staticProps) defineProperties(Constructor, staticProps);
+                    return Constructor;
+                };
+            }();
 
-    apaga(){
-        this._listaNegociacoes.esvazia();
-        this._mensagem.texto = "Negociações apagadas com sucesso!!";
-    }
+            NegociacaoController = function () {
+                function NegociacaoController() {
+                    _classCallCheck(this, NegociacaoController);
 
-    _limpaFormulario(){
-        this._inputData.value = '';
-        this._inputQuantidade.value = 1;
-        this._inputValor.value = '0.0';
-        this._inputData.focus();
-    }
+                    var $ = document.querySelector.bind(document);
+                    this._inputData = $('#data');
+                    this._inputQuantidade = $('#quantidade');
+                    this._inputValor = $('#valor');
+                    this._ordemAtual = '';
 
-    _criaNegociacao(){
-         return new Negociacao(DateHelper.textoParaData(this._inputData.value),
-                              this._inputQuantidade.value,
-                              this._inputValor.value);
-    }
-}
+                    this._listaNegociacoes = new Bind(new ListaNegociacoes(), new NegociacoesView($('#negociacoesView')), "adiciona", "esvazia", "ordenar", "reverse");
+
+                    this._mensagem = new Bind(new Mensagem(), new MensagemView($('#mensagemView')), "texto");
+
+                    this._service = new NegociacaoService();
+
+                    this._init();
+                }
+
+                _createClass(NegociacaoController, [{
+                    key: '_init',
+                    value: function _init() {
+                        var _this = this;
+
+                        this._buscaNegociacoes();
+                        setInterval(function () {
+                            _this.importarNegociacoes();
+                        }, 3000);
+                    }
+                }, {
+                    key: 'adiciona',
+                    value: function adiciona(event) {
+                        var _this2 = this;
+
+                        event.preventDefault();
+                        var negociacao = this._criaNegociacao();
+
+                        this._service.cadastra(negociacao).then(function (mensagem) {
+                            _this2._listaNegociacoes.adiciona(negociacao);
+                            _this2._mensagem.texto = mensagem;
+                            _this2._limpaFormulario();
+                        }).catch(function (erro) {
+                            return _this2._mensagem.texto = "Erro ao adicionar a negociação! - " + e;
+                        });
+                    }
+                }, {
+                    key: 'importarNegociacoes',
+                    value: function importarNegociacoes() {
+                        var _this3 = this;
+
+                        this._service.importarNegociacoes(this._listaNegociacoes.negociacoes).then(function (negociacoes) {
+                            return negociacoes.forEach(function (negociacao) {
+                                return _this3._listaNegociacoes.adiciona(negociacao);
+                            });
+                        }).catch(function (erro) {
+                            return _this3._mensagem.texto = erro;
+                        });
+                    }
+                }, {
+                    key: 'apaga',
+                    value: function apaga() {
+                        var _this4 = this;
+
+                        this._service.apagaTodas().then(function (msg) {
+                            _this4._listaNegociacoes.esvazia();
+                            _this4._mensagem.texto = msg;
+                        }).catch(function (msg) {
+                            return _this4._mensagem.texto = msg;
+                        });
+                    }
+                }, {
+                    key: 'ordenar',
+                    value: function ordenar(coluna) {
+                        if (this._ordemAtual == coluna) return this._listaNegociacoes.reverse();
+
+                        this._listaNegociacoes.ordenar(function (a, b) {
+                            return a[coluna] - b[coluna];
+                        });
+
+                        this._ordemAtual = coluna;
+                    }
+                }, {
+                    key: '_limpaFormulario',
+                    value: function _limpaFormulario() {
+                        this._inputData.value = '';
+                        this._inputQuantidade.value = 1;
+                        this._inputValor.value = '0.0';
+                        this._inputData.focus();
+                    }
+                }, {
+                    key: '_criaNegociacao',
+                    value: function _criaNegociacao() {
+                        return new Negociacao(DateHelper.textoParaData(this._inputData.value), parseInt(this._inputQuantidade.value), parseFloat(this._inputValor.value));
+                    }
+                }, {
+                    key: '_buscaNegociacoes',
+                    value: function _buscaNegociacoes() {
+                        var _this5 = this;
+
+                        this._service.lista().then(function (negociacoes) {
+                            return negociacoes.forEach(function (negociacao) {
+                                return _this5._listaNegociacoes.adiciona(negociacao);
+                            });
+                        }).catch(function (erro) {
+                            console.log(erro);
+                            _this5._mensagem.texto = erro;
+                        });
+                    }
+                }]);
+
+                return NegociacaoController;
+            }();
+
+            negociacaoController = new NegociacaoController();
+            function currentInstance() {
+                return negociacaoController;
+            }
+
+            _export('currentInstance', currentInstance);
+        }
+    };
+});
+//# sourceMappingURL=NegociacaoController.js.map
